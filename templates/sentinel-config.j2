@@ -1,0 +1,10 @@
+# Main sentinel config is in {{ redis_sentinel_volatile_config }}
+# This one is included here
+
+daemonize yes
+
+bind {{  redis_sentinel_bind_interface }}
+dir {{ redis_sentinel_dir  }}
+port {{  redis_sentinel_port }}
+pidfile {{ redis_sentinel_pidfile }}
+logfile {{ redis_sentinel_logfile }}

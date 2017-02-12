@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+# This file configures initial Redis replication
+include {{ redis_sentinel_config }}
+
+sentinel monitor cluster {{  redis_replication_master_address }} {{  redis_replication_master_port }} {{ redis_replication_quorum }}
+sentinel down-after-milliseconds cluster 500
+sentinel failover-timeout cluster 1000
+# synchronize slaves one by one
+sentinel parallel-syncs cluster 1

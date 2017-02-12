@@ -1,0 +1,101 @@
+
+- name: "Install redis & redis-sentinel"
+  apt:
+    name: 'redis-sentinel,redis-server'
+    state: present
+
+- name: "Create redis replication config"
+  template:
+    dest: '{{ redis_volatile_config }}'
+    src: redis-volatile-config.j2
+    owner: redis
+    group: redis
+    force: false
+  notify:
+    - restart redis-server
+
+- name: "Create redis config "
+  template:
+    src: redis-config.j2
+    dest: '{{ redis_config }}'
+    force: true
+  notify:
+    - restart redis-server
+
+- name: "Create sentinel volatile config "
+  template:
+    src: sentinel-volatile-config.j2
+    dest: '{{ redis_sentinel_volatile_config }}'
+    owner: redis
+    group: redis
+    force: false    # don't overwrite
+  notify:
+    - restart redis-sentinel
+
+- name: "Create sentinel.config "
+  template:
+    dest: '{{ redis_sentinel_config }}'
+    src: sentinel-config.j2
+    owner: redis
+    group: redis
+
+- name: Create override directories
+  file:
+    name: /etc/systemd/system/{{ item }}.service.d/
+    state: directory
+  with_items: [ redis-server, redis-sentinel ]
+
+- name: "Override redis-server systemd-unit"
+  copy:
+    dest: /etc/systemd/system/redis-server.service.d/override.conf
+    content: |
+        [Service]
+        ExecStart=
+        ExecStart=/usr/bin/redis-server {{ redis_volatile_config }}
+  register: _redis_unit_updated
+  notify: restart redis-server
+
+- name: "Override redis-sentinel systemd-unit"
+  copy:
+    dest: /etc/systemd/system/redis-sentinel.service.d/override.conf
+    content: |
+        [Service]
+        ExecStart=
+        ExecStart=/usr/bin/redis-server {{ redis_sentinel_volatile_config }} --sentinel
+  register: _sentinel_unit_updated
+  notify: restart redis-sentinel
+
+- name: Reload systemd
+  shell: systemctl daemon-reload
+  when: _sentinel_unit_updated|changed
+  notify: restart redis-sentinel
+
+- name: Reload systemd
+  shell: systemctl daemon-reload
+  when: _redis_unit_updated|changed
+
+- name: "Start Redis"
+  service:
+    name: "redis-server"
+    state: started
+
+- name: "Start Redis-sentinel"
+  service:
+    name: "redis-sentinel"
+    state: started
+
+- meta: flush_handlers
+
+- name: "Check Redis is listening"
+  wait_for:
+    host: "{{ redis_check_address }}"
+    connect_timeout: 1
+    timeout: 1
+    port: "{{ redis_port }}"
+
+- name: "Check Redis sentinel is listening"
+  wait_for:
+    host: "{{ redis_sentinel_check_address }}"
+    connect_timeout: 1
+    timeout: 1
+    port: "{{ redis_sentinel_port }}"

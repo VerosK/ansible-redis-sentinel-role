@@ -1,0 +1,69 @@
+
+# Use this for slave setup, but don't forget to change the address
+redis_replication_master_address: "127.0.0.1"
+redis_replication_master_port: '{{ redis_port }}'
+redis_replication_quorum: 2
+
+# Use this on master
+#redis_replication_master_address: ~
+
+redis_config: /etc/redis/redis.conf
+redis_volatile_config: /var/lib/redis/redis.conf
+
+redis_replication_additional_config: |
+    # Require at least one slave to be up
+    min-slaves-to-write 1
+    # Requires slave to accept in 1 second
+    min-slaves-max-lag 1
+
+redis_port: 6379
+redis_bind_interface: 127.0.0.1
+redis_unixsocket: ''
+redis_timeout: 300
+
+redis_loglevel: "notice"
+redis_logfile: /var/log/redis/redis-server.log
+
+redis_databases: 16
+
+# Set to an empty set to disable persistence (saving the DB to disk).
+redis_save:
+  - 900 1
+  - 300 10
+  - 60 10000
+
+redis_rdbcompression: "yes"
+redis_dbfilename: dump.rdb
+redis_dbdir: /var/lib/redis
+
+redis_maxmemory: 0
+redis_maxmemory_policy: "noeviction"
+redis_maxmemory_samples: 5
+
+redis_appendonly: "no"
+redis_appendfsync: "everysec"
+
+# Add extra include files for local configuration/overrides.
+redis_includes: []
+
+# Check Redis is listening on this address
+redis_check_address: 127.0.0.1
+# Set to None when nobody is listening
+#redis_check_address: ~
+
+redis_sentinel_check_address: 127.0.0.1
+#redis_sentinel_check_address: ~
+
+redis_service: redis-server
+redis_sentinel_service: redis-sentinel
+
+redis_sentinel_bind_interface: "0.0.0.0"
+redis_sentinel_port: 5001
+
+redis_sentinel_dir: /var/lib/redis
+redis_sentinel_pidfile: /var/run/redis/redis-sentinel.pid
+redis_sentinel_logfile: /var/log/redis/redis-sentinel.pid
+redis_sentinel_volatile_config: /var/lib/redis/sentinel.conf
+redis_sentinel_config: /etc/redis/sentinel.conf
+redis_sentinel_systemd_unit:
+    /etc/systemd/system/{{ redis_sentinel_service }}.service

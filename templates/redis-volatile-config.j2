@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+#
+# This file configures initial Redis replication
+# Sentinel can overwrite these initial replications
+# {{ ansible_all_ipv4_addresses }}
+{% if redis_replication_master_address not in ansible_all_ipv4_addresses %}
+slaveof {{  redis_replication_master_address }} {{  redis_replication_master_port }}
+{% else %}
+# Our node "{{ ansible_hostname }}" is master ( {{ redis_replication_master_address }} ).
+{% endif %}
+
+# Additional replication config
+{{ redis_replication_additional_config|default("") }}
+
+include {{ redis_config }}
